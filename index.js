@@ -100,13 +100,12 @@ async function installTools() {
   }
 }
 
-async function allowEnvrc() {
-  const pathToRc = core.getInput('path-to-rc');
-  core.info(`allowing envrc file ${pathToRc}...`);
-  await exec.exec(`direnv`, ['allow', pathToRc]);
+async function allowEnvrc(path) {
+  core.info('allowing envrc...');
+  await exec.exec(`direnv`, ['allow', path]);
 }
 
-async function exportEnvrc() {
+async function exportEnvrc(path) {
   let outputBuffer = '';
   const options = {};
   options.listeners = {
@@ -114,6 +113,7 @@ async function exportEnvrc() {
       outputBuffer += data.toString();
     }
   };
+  options.cwd = path;
   options.silent = true;
 
   core.info('exporting envrc...');
@@ -138,15 +138,16 @@ async function setMasks(envs) {
 
 // action entrypoint
 async function main() {
+  const path = core.getInput('path');
   try {
     // install direnv
     await installTools();
 
     // allow given envrc
-    await allowEnvrc();
+    await allowEnvrc(path);
 
     // export envrc to json
-    const envs = await exportEnvrc();
+    const envs = await exportEnvrc(path);
 
     // set envs
     Object.keys(envs).forEach(function (name) {
